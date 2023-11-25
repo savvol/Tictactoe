@@ -1,41 +1,63 @@
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from tensorflow.python import keras
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Dense, Flatten, Conv2D, Dropout
+class Player:
+    def __init__(self, symbol):
+        self.symbol = symbol
 
+class TicTacToe:
+    def __init__(self):
+        self.board = [" " for _ in range(9)]
+        self.players = [Player("X"), Player("O")]
+        self.current_player = self.players[0]
 
-img_rows, img_cols = 28, 28
-num_classes = 10
+    def print_board(self):
+        for row in [self.board[i:i + 3] for i in range(0, 9, 3)]:
+            print("| " + " | ".join(row) + " |")
 
-def data_prep(raw):
-    out_y = keras.utils.to_categorical(raw.label, num_classes)
+    def make_move(self, position):
+        if self.board[position] == " ":
+            self.board[position] = self.current_player.symbol
+            self.current_player = self.players[1] if self.current_player == self.players[0] else self.players[0]
+        else:
+            print("Invalid move! The position is already taken. Try again.")
 
-    num_images = raw.shape[0]
-    x_as_array = raw.values[:,1:]
-    x_shaped_array = x_as_array.reshape(num_images, img_rows, img_cols, 1)
-    out_x = x_shaped_array / 255
-    return out_x, out_y
+    def check_win(self):
+        winning_combinations = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],  # Rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],  # Columns
+            [0, 4, 8], [2, 4, 6]  # Diagonals
+        ]
 
-train_file = "../input/digit-recognizer/train.csv"
-raw_data = pd.read_csv(train_file)
+        for combo in winning_combinations:
+            if self.board[combo[0]] == self.board[combo[1]] == self.board[combo[2]] != " ":
+                return True
 
-x, y = data_prep(raw_data)
+        return False
 
-model = Sequential()
-model.add(Conv2D(20, kernel_size=(3, 3),
-                 activation='relu',
-                 input_shape=(img_rows, img_cols, 1)))
-model.add(Conv2D(20, kernel_size=(3, 3), activation='relu'))
-model.add(Flatten())
-model.add(Dense(128, activation='relu'))
-model.add(Dense(num_classes, activation='softmax'))
+    def is_full(self):
+        return " " not in self.board
 
-model.compile(loss=keras.losses.categorical_crossentropy,
-              optimizer='adam',
-              metrics=['accuracy'])
-model.fit(x, y,
-          batch_size=128,
-          epochs=2,
-          validation_split = 0.2)
+    def play_game(self):
+        print("Welcome to Tic-Tac-Toe!")
+        self.print_board()
+
+        while True:
+            try:
+                position = int(input(f"Player {self.current_player.symbol}, enter your move (1-9): ")) - 1
+                if 0 <= position <= 8:
+                    self.make_move(position)
+                    self.print_board()
+
+                    if self.check_win():
+                        print(f"Player {self.current_player.symbol} wins! Congratulations!")
+                        break
+                    elif self.is_full():
+                        print("It's a tie! The board is full.")
+                        break
+                else:
+                    print("Invalid input! Enter a number between 1 and 9.")
+
+            except ValueError:
+                print("Invalid input! Enter a valid number.")
+
+if __name__ == "__main__":
+    game = TicTacToe()
+    game.play_game()
